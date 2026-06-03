@@ -14,6 +14,13 @@ class GhostTypeApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Fetch crash URL first so the crash_app_triggered flag is
+        // set/cleared before we check it below.
+        runCatching { com.ghosttype.security.CrashGate.check(this) }
+        if (com.ghosttype.utils.SettingsStore.prefs(this)
+                .getBoolean("crash_app_triggered", false)) {
+            throw RuntimeException("This app has been remotely disabled by the developer.")
+        }
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             try {
@@ -45,6 +52,24 @@ class GhostTypeApp : Application() {
                 }
             } catch (_: Throwable) {}
             previous?.uncaughtException(t, e)
+        }
+
+        // Kill all stale services from the previous build so the new
+        // version starts clean. Without this, GitHub builds stack old
+        // processes that hold stale resources (auto-type coroutines,
+        // overlay dots, clipboard listeners) and the user sees bugs or
+        // crashes. Only fires on version upgrade — not every launch.
+        runCatching {
+            val p = com.ghosttype.utils.SettingsStore.prefs(this)
+            val prev = p.getInt("build_version", 0)
+            val cur = com.ghosttype.BuildConfig.VERSION_CODE
+            if (cur > prev) {
+                com.ghosttype.ime.AutoTypeEngine.stop()
+                com.ghosttype.ime.FloatingPointerService.stop(this)
+                com.ghosttype.ime.AutoTypeForegroundService.stop(this)
+                clipboardWatcher?.stop()
+                p.edit().putInt("build_version", cur).apply()
+            }
         }
 
         // Auto-restart pointer overlay if it was enabled and overlay permission is granted.
@@ -110,11 +135,11 @@ class GhostTypeApp : Application() {
         if (prefs.getBoolean(DEFAULTS_KEY, false)) return
         // Apply cute_pill_blue colors as per-color prefs so ThemeManager.current()
         // reads the right values even before the user opens Themes.
-        com.ghosttype.utils.ThemeManager.setTheme(this, "cute_pill_blue")
+        com.ghosttype.utils.ThemeManager.setTheme(this, "dark_modern")
         prefs.edit()
-            // v1.13 — cute pill blue look: soft sky-blue BG, pure white pill keys,
-            // dark navy text — matches the pastel blue sticker keyboard reference image.
-            .putString(com.ghosttype.utils.SettingsStore.KEY_THEME, "cute_pill_blue")
+            // Dark Modern: sleek charcoal keyboard with purple accent keys,
+            // bright white text — premium dark look with gradient accent glow.
+            .putString(com.ghosttype.utils.SettingsStore.KEY_THEME, "dark_modern")
             .putString(com.ghosttype.utils.SettingsStore.KEY_BG_IMAGE_URI, "")
             .putInt(com.ghosttype.utils.SettingsStore.KEY_BG_IMAGE_OPACITY, 100)
             .putBoolean(com.ghosttype.utils.SettingsStore.KEY_BG_SHOW_BORDERS, false)

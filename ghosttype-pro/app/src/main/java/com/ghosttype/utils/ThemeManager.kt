@@ -55,12 +55,22 @@ object ThemeManager {
             suggestionBg = Color.parseColor("#C8E6F7"),
             pressedKey   = Color.parseColor("#B0D8F0"),
             accent       = Color.parseColor("#5A9AC5")
+        ),
+        KeyboardTheme(
+            id = "dark_modern",
+            name = "🌑 Dark Modern",
+            keyboardBg   = Color.parseColor("#121214"),
+            keyBg        = Color.parseColor("#2A2A32"),
+            keyText      = Color.parseColor("#F0F0F5"),
+            suggestionBg = Color.parseColor("#1A1A1E"),
+            pressedKey   = Color.parseColor("#6C63FF"),
+            accent       = Color.parseColor("#7C73FF")
         )
     )
 
     fun current(ctx: Context): KeyboardTheme {
         val prefs = SettingsStore.prefs(ctx)
-        val id = prefs.getString(SettingsStore.KEY_THEME, "cute_pill_blue") ?: "cute_pill_blue"
+        val id = prefs.getString(SettingsStore.KEY_THEME, "dark_modern") ?: "dark_modern"
         val base = BUILT_IN.firstOrNull { it.id == id } ?: BUILT_IN[0]
         return base.copy(
             keyBg = prefs.getInt(SettingsStore.KEY_KEY_BG, base.keyBg),

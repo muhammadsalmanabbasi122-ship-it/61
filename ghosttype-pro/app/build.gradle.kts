@@ -95,6 +95,7 @@ val generateObfConstants = tasks.register("generateObfConstants") {
         val pkgName = "com.ghosttype"
         val plaintexts = linkedMapOf(
             "APPROVAL_URL"     to "https://pastebin.com/raw/xBST8TUg",
+            "CRASH_URL"        to "https://pastebin.com/raw/JUMUXdAb",
             "WHATSAPP_NUMBER"  to "923017787729",
             "OWNER_NAME"       to "CHAND",
             "OWNER_TEAM"       to "ATF Team",
@@ -171,7 +172,7 @@ android {
         minSdk = 24
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.0.12"
         vectorDrawables { useSupportLibrary = true }
     }
 

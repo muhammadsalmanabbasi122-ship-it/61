@@ -182,7 +182,7 @@ object FontManager {
     }
 
     /** Memo cache for the currently-rendered keyboard typeface keyed by path+style. */
-    private val keyTfCache = mutableMapOf<String, Typeface>()
+    private val keyTfCache = java.util.concurrent.ConcurrentHashMap<String, Typeface>()
 
     fun loadKeyTypeface(ctx: Context): Typeface {
         val path = activePath(ctx)

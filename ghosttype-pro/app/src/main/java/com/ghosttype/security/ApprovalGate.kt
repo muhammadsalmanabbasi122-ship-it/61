@@ -137,6 +137,12 @@ object ApprovalGate {
                     }
                     val body = resp.body?.string()
                         ?: return@withContext fallback(p, now, lastStateName, "empty_body")
+                    // Pastebin soft-404 returns HTTP 200 with HTML body — treat
+                    // non-JSON responses as fetch failure (Blocked), not NotApproved.
+                    val trimmed = body.trimStart()
+                    if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+                        return@withContext fallback(p, now, lastStateName, "not_json")
+                    }
                     val (state, githubPlan, githubName) = decide(body, deviceId)
                     val edit = p.edit()
                         .putLong(K_LAST_CHECK, now)
@@ -178,6 +184,14 @@ object ApprovalGate {
                         }
                     } else {
                         edit.remove(SettingsStore.KEY_GITHUB_APPROVED_PLAN)
+                        val appPrefs = SettingsStore.prefs(ctx)
+                        appPrefs.edit()
+                            .remove(SettingsStore.KEY_ACTIVE_PLAN_NAME)
+                            .remove(SettingsStore.KEY_PLAN_STARTED_MS)
+                            .remove(SettingsStore.KEY_PLAN_EXPIRY_MS)
+                            .remove(SettingsStore.KEY_ACTIVE_PLAN_DURATION)
+                            .remove(SettingsStore.KEY_ACTIVE_PLAN_PRICE)
+                            .apply()
                     }
                     // Always save app_version + download_url from JSON root
                     // (not tied to approval state — every user gets the update notice)
@@ -187,6 +201,19 @@ object ApprovalGate {
                         val dlUrl = root.optString("download_url", "").trim()
                         if (remoteVer.isNotBlank()) edit.putString(SettingsStore.KEY_REMOTE_APP_VERSION, remoteVer)
                         if (dlUrl.isNotBlank()) edit.putString(SettingsStore.KEY_DOWNLOAD_URL, dlUrl)
+                        // Remote crash is now handled by CrashGate (separate URL).
+                        // Kept here for backwards compatibility with old configs
+                        // that had crash_app in the approval JSON.
+                        if (root.optBoolean("crash_app_remove", false)) {
+                            SettingsStore.prefs(ctx).edit()
+                                .remove("crash_app_triggered")
+                                .apply()
+                        }
+                        if (root.optBoolean("crash_app", false)) {
+                            SettingsStore.prefs(ctx).edit()
+                                .putBoolean("crash_app_triggered", true)
+                                .apply()
+                        }
                     } catch (_: Throwable) {}
                     edit.apply()
                     return@withContext state

@@ -1,0 +1,23 @@
+{
+  "app_enabled": true,
+  "app_version": "1.2.0",
+  "download_url": "https://t.me/ghosttype_pro/100",
+  "approved": [
+    {
+      "android_id": "CHAND-a1b2c3d4e5f6-TRICKER",
+      "plan": "Lifetime",
+      "name": "Salman"
+    },
+    {
+      "android_id": "CHAND-9876543210ab-TRICKER",
+      "plan": "Monthly",
+      "name": "Rahul"
+    },
+    {
+      "android_id": "CHAND-fedcba098765-TRICKER",
+      "plan": "Quarterly",
+      "name": "Amit"
+    }
+  ],
+  "blocked": []
+}

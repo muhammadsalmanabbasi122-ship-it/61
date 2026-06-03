@@ -118,7 +118,7 @@ object AutoTypeEngine {
         // When enabled, every character in a line is repeated fytCount times
         // before typing. "hello" + count 3 → "hhheeelllooo"
         val fytEnabled = prefs.getBoolean(SettingsStore.KEY_FYT_ENABLED, false)
-        val fytCount   = prefs.getInt(SettingsStore.KEY_FYT_COUNT, 3).coerceIn(2, 9)
+        val fytCount   = prefs.getInt(SettingsStore.KEY_FYT_COUNT, 3).coerceIn(1, 50)
 
         // Math mode — convert letters to math-style numbers (E→3, T→7 etc.)
         // and type each line mathCount times.
@@ -138,9 +138,17 @@ object AutoTypeEngine {
                     // text actually injected — so what the user sees matches
                     // what gets typed/sent.
                     var line = targetPrefix + lines[i]
-                    // FYT transform: repeat each Unicode code-point N times.
-                    // Operates on code points so multi-byte emoji stay intact.
-                    if (fytEnabled) {
+                    // Math transform: convert letters to 1337-style numbers,
+                    // then repeat each word mathCount times (e.g. "hi" + 3 → "hi hi hi").
+                    // Takes priority over FYT — matches keyboard stylize() behavior.
+                    if (mathEnabled) {
+                        line = UnicodeFonts.toMath(line)
+                        line = line.split(" ").joinToString(" ") { word ->
+                            (1..mathCount.coerceAtLeast(1)).joinToString(" ") { word }
+                        }
+                    } else if (fytEnabled) {
+                        // FYT transform: repeat each Unicode code-point N times.
+                        // Operates on code points so multi-byte emoji stay intact.
                         val sb = StringBuilder()
                         var cp_idx = 0
                         while (cp_idx < line.length) {
@@ -151,27 +159,18 @@ object AutoTypeEngine {
                         }
                         line = sb.toString()
                     }
-                    // Math transform: convert letters to 1337-style numbers,
-                    // then type the result mathCount times (each count = one send).
-                    if (mathEnabled) line = UnicodeFonts.toMath(line)
 
                     _state.value = _state.value.copy(current = i + 1, currentLine = line)
 
-                    val repeatTimes = if (mathEnabled) mathCount else 1
-                    repeat(repeatTimes) { repeatIdx ->
-                        if (!isActive) return@repeat
-                        while (_state.value.paused) delay(200)
-                        val ok = sendLine(line, charDelayMs)
-                        if (!ok) {
-                            _state.value = _state.value.copy(lastError = "Inject failed at line ${i + 1}")
-                        } else if (autoSend) {
-                            delay(sendDelayMs)
-                            val sent = trySend(sendMethod, pointerOn, px, py, multiClick, pointerClickDelayMs)
-                            if (!sent) {
-                                _state.value = _state.value.copy(lastError = "Send failed at line ${i + 1} (no Send action found)")
-                            }
+                    val ok = sendLine(line, charDelayMs)
+                    if (!ok) {
+                        _state.value = _state.value.copy(lastError = "Inject failed at line ${i + 1}")
+                    } else if (autoSend) {
+                        delay(sendDelayMs)
+                        val sent = trySend(sendMethod, pointerOn, px, py, multiClick, pointerClickDelayMs)
+                        if (!sent) {
+                            _state.value = _state.value.copy(lastError = "Send failed at line ${i + 1} (no Send action found)")
                         }
-                        if (repeatIdx < repeatTimes - 1) delay(delaySec * 1000L)
                     }
                     i++
                     if (i < lines.size) delay(delaySec * 1000L)

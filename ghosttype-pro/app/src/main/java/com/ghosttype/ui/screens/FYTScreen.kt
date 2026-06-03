@@ -28,12 +28,13 @@ fun FYTScreen() {
     val ctx = LocalContext.current
     val prefs = SettingsStore.prefs(ctx)
 
+    var fytEnabled by remember { mutableStateOf(prefs.getBoolean(SettingsStore.KEY_FYT_ENABLED, false)) }
     var count by remember { mutableStateOf(prefs.getInt(SettingsStore.KEY_FYT_COUNT, 3)) }
     var wordsText by remember { mutableStateOf(prefs.getString(SettingsStore.KEY_FYT_WORDS, "") ?: "") }
 
     var imeTick by remember { mutableStateOf(0) }
     val imeReady = remember(imeTick) { AutoTypeEngine.injector != null }
-    LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(800); imeTick++ } }
+    LaunchedEffect(Unit) { while (isActive) { kotlinx.coroutines.delay(800); imeTick++ } }
 
     val words = remember(wordsText) {
         wordsText.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
@@ -47,6 +48,36 @@ fun FYTScreen() {
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Text("FYT Type", color = Orange, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+
+        // FYT ON/OFF toggle
+        Row(
+            modifier = Modifier.fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("FYT Mode", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(
+                    if (fytEnabled) "ON — each character repeated $count times" else "OFF — types normally",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp
+                )
+            }
+            Switch(
+                checked = fytEnabled,
+                onCheckedChange = {
+                    fytEnabled = it
+                    prefs.edit().putBoolean(SettingsStore.KEY_FYT_ENABLED, it).apply()
+                },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.Black,
+                    checkedTrackColor = Orange
+                )
+            )
+        }
 
         // IME status
         Row(
@@ -76,7 +107,7 @@ fun FYTScreen() {
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Type Count", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text("Each word will type this many times", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text("Each character repeats this many times", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),

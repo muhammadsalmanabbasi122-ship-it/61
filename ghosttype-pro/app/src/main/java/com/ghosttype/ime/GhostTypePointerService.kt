@@ -29,9 +29,9 @@ class GhostTypePointerService : AccessibilityService() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
             if (intent?.action == ACTION_POINTER_CLICK) {
                 val prefs = SettingsStore.prefs(this@GhostTypePointerService)
-                val x = prefs.getFloat(SettingsStore.KEY_POINTER_X, -1f)
-                val y = prefs.getFloat(SettingsStore.KEY_POINTER_Y, -1f)
-                if (x >= 0 && y >= 0) clickAt(x, y)
+                val x = prefs.getInt(SettingsStore.KEY_POINTER_X, -1)
+                val y = prefs.getInt(SettingsStore.KEY_POINTER_Y, -1)
+                if (x >= 0 && y >= 0) clickAt(x.toFloat(), y.toFloat())
             }
         }
     }

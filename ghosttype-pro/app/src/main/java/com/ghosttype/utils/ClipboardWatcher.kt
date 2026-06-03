@@ -10,7 +10,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class ClipboardWatcher(private val ctx: Context) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     private val listener = ClipboardManager.OnPrimaryClipChangedListener {
         val text = cm.primaryClip?.getItemAt(0)?.text?.toString() ?: return@OnPrimaryClipChangedListener
@@ -57,8 +57,17 @@ class ClipboardWatcher(private val ctx: Context) {
         }
     }
 
-    fun start() { cm.addPrimaryClipChangedListener(listener) }
-    fun stop() { cm.removePrimaryClipChangedListener(listener) }
+    fun start() {
+        if (scope.isActive.not()) {
+            @Suppress("DEPRECATION")
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        }
+        cm.addPrimaryClipChangedListener(listener)
+    }
+    fun stop() {
+        cm.removePrimaryClipChangedListener(listener)
+        scope.cancel()
+    }
 
     companion object {
         /** Recent-copy window. Same text inside this window is ignored. */

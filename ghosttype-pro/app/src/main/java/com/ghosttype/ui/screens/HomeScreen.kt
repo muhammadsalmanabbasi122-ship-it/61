@@ -60,7 +60,7 @@ fun HomeScreen(onOpenImeSettings: () -> Unit, onOpenAccessibility: () -> Unit) {
 
     // Also poll every 1.5s so it updates the moment user toggles
     LaunchedEffect(Unit) {
-        while (true) {
+        while (isActive) {
             delay(1500)
             refreshTick++
         }

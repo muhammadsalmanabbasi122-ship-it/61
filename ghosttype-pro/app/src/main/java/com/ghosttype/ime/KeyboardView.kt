@@ -205,27 +205,30 @@ class KeyboardView(
                 val opacity = (prefs.getInt(SettingsStore.KEY_BG_IMAGE_OPACITY, 60) / 100f).coerceIn(0f, 1f)
                 val ins = context.contentResolver.openInputStream(Uri.parse(bgUri))
                 if (ins != null) {
-                    val bmp = BitmapFactory.decodeStream(ins)
-                    ins.close()
-                    if (bmp != null) {
-                        bgBitmap = bmp
-                        val baseColor = ColorDrawable(theme.keyboardBg)
-                        // ===== Custom BG must NOT inflate keyboard height (issue #4) =====
-                        // BitmapDrawable.getMinimumHeight()/getMinimumWidth() return
-                        // the bitmap's intrinsic pixel dimensions. Android's view
-                        // measure pass treats the background's minimum size as a
-                        // floor for the view's measured size — so a 1500×2000 user
-                        // photo would balloon the keyboard to 2000 px tall (the
-                        // exact "keyboard size badal jata hai" complaint). Wrapping
-                        // the BitmapDrawable so all four "minimum/intrinsic" methods
-                        // return -1 / 0 lets the keyboard keep its configured size
-                        // and simply fits the image inside the available bounds.
-                        val img = NoIntrinsicBitmapDrawable(resources, bmp).apply {
-                            alpha = (opacity * 255).toInt().coerceIn(0, 255)
-                            gravity = Gravity.BOTTOM or Gravity.FILL_HORIZONTAL
+                    try {
+                        val bmp = BitmapFactory.decodeStream(ins)
+                        if (bmp != null) {
+                            bgBitmap = bmp
+                            val baseColor = ColorDrawable(theme.keyboardBg)
+                            // ===== Custom BG must NOT inflate keyboard height (issue #4) =====
+                            // BitmapDrawable.getMinimumHeight()/getMinimumWidth() return
+                            // the bitmap's intrinsic pixel dimensions. Android's view
+                            // measure pass treats the background's minimum size as a
+                            // floor for the view's measured size — so a 1500×2000 user
+                            // photo would balloon the keyboard to 2000 px tall (the
+                            // exact "keyboard size badal jata hai" complaint). Wrapping
+                            // the BitmapDrawable so all four "minimum/intrinsic" methods
+                            // return -1 / 0 lets the keyboard keep its configured size
+                            // and simply fits the image inside the available bounds.
+                            val img = NoIntrinsicBitmapDrawable(resources, bmp).apply {
+                                alpha = (opacity * 255).toInt().coerceIn(0, 255)
+                                gravity = Gravity.BOTTOM or Gravity.FILL_HORIZONTAL
+                            }
+                            background = LayerDrawable(arrayOf(baseColor, img))
+                            return
                         }
-                        background = LayerDrawable(arrayOf(baseColor, img))
-                        return
+                    } finally {
+                        ins.close()
                     }
                 }
             } catch (_: Exception) {}
@@ -362,6 +365,7 @@ class KeyboardView(
         // override the 3D shadow appears as a rectangle around the
         // bitmap and ruins the soft pill look on per-key bg image mode.
         override fun getOutline(outline: android.graphics.Outline) {
+            if (bounds.isEmpty) return
             outline.setRoundRect(bounds, cornerRadius)
         }
     }
@@ -414,24 +418,13 @@ class KeyboardView(
         reload()
     }
 
-    private fun toggleFytMode() {
-        val on = !prefs.getBoolean(SettingsStore.KEY_FYT_ENABLED, false)
-        prefs.edit().putBoolean(SettingsStore.KEY_FYT_ENABLED, on).apply()
-        Toast.makeText(context, if (on) "FYT Mode ON 🔁" else "FYT Mode OFF", Toast.LENGTH_SHORT).show()
-        reload()
-    }
-
     private fun allToolActions(): List<ToolAction> = listOf(
-        ToolAction("🎨", "Themes",    iconRes = null,                           tintIcon = false) { v -> showThemePicker(v) },
         ToolAction("🔢", if (prefs.getBoolean(SettingsStore.KEY_MATH_ENABLED, false)) "Math ✓" else "Math",
             iconRes = R.drawable.ic_tool_math, tintIcon = true) { toggleMathMode() },
-        ToolAction("🔁", if (prefs.getBoolean(SettingsStore.KEY_FYT_ENABLED, false)) "FYT ✓" else "FYT Type",
-            iconRes = R.drawable.ic_tool_fyt, tintIcon = true) { toggleFytMode() },
         ToolAction("⬆",  "Caps",      iconRes = R.drawable.ic_tool_caps,        tintIcon = true) { toggleCapsMode() },
         ToolAction("Aa", "Font",      iconRes = R.drawable.ic_tool_font,      tintIcon = true) { v -> showFontPicker(v) },
         ToolAction("📋", "Clipboard", iconRes = R.drawable.ic_tool_clipboard,  tintIcon = true) { showClipboardPanel() },
         ToolAction("💣", "Auto-Type", iconRes = R.drawable.ic_tool_autotype,   tintIcon = true) { showAutoTypePanel() },
-        ToolAction("🌐", "Language",  iconRes = R.drawable.ic_tool_language,   tintIcon = true) { onSwitchLanguage() },
         ToolAction("😀", "Emoji",     iconRes = R.drawable.ic_tool_emoji,      tintIcon = true) { showEmojiPanel() },
         ToolAction("🎯", pointerLabel(), iconRes = R.drawable.ic_tool_pointer, tintIcon = true) { togglePointerMode() },
         ToolAction("⌨",  "Keyboard",  iconRes = R.drawable.ic_tool_keyboard,   tintIcon = true) { showKeysPanel() },

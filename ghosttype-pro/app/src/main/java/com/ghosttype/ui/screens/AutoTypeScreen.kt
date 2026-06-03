@@ -40,12 +40,10 @@ fun AutoTypeScreen(
     var charDelay  by remember { mutableStateOf(prefs.getInt(SettingsStore.KEY_AT_CHAR_DELAY_MS, 35)) }
     var loop       by remember { mutableStateOf(prefs.getBoolean(SettingsStore.KEY_AT_LOOP, false)) }
     var autoSend   by remember { mutableStateOf(prefs.getBoolean(SettingsStore.KEY_AT_AUTO_SEND, true)) }
-    var fytEnabled by remember { mutableStateOf(prefs.getBoolean(SettingsStore.KEY_FYT_ENABLED, false)) }
-    var fytCount   by remember { mutableStateOf(prefs.getInt(SettingsStore.KEY_FYT_COUNT, 3).coerceIn(2, 9)) }
 
     var imeTick by remember { mutableStateOf(0) }
     val imeReady = remember(imeTick, state.running) { AutoTypeEngine.isImeReady }
-    LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(800); imeTick++ } }
+    LaunchedEffect(Unit) { while (isActive) { kotlinx.coroutines.delay(800); imeTick++ } }
 
     Column(
         modifier = Modifier
@@ -199,89 +197,6 @@ fun AutoTypeScreen(
 
             ToggleRow("Auto-send after each line", autoSend) { autoSend = it; prefs.edit().putBoolean(SettingsStore.KEY_AT_AUTO_SEND, it).apply() }
             ToggleRow("Loop mode", loop) { loop = it; prefs.edit().putBoolean(SettingsStore.KEY_AT_LOOP, it).apply() }
-        }
-
-        // ══════════════════════════════════════════════════════
-        // FYT — Fancy Repeat Typing
-        // ══════════════════════════════════════════════════════
-        SectionCard {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        "FYT  ·  Fancy Repeat",
-                        color = Orange,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        if (fytEnabled)
-                            "ON — \"hello\" → ${"h".repeat(fytCount)}${"e".repeat(fytCount)}${"l".repeat(fytCount)}${"l".repeat(fytCount)}${"o".repeat(fytCount)}"
-                        else
-                            "OFF — types normally",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp
-                    )
-                }
-                Switch(
-                    checked = fytEnabled,
-                    onCheckedChange = {
-                        fytEnabled = it
-                        prefs.edit().putBoolean(SettingsStore.KEY_FYT_ENABLED, it).apply()
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.Black,
-                        checkedTrackColor = Orange
-                    )
-                )
-            }
-
-            if (fytEnabled) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            "Repeat count",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 13.sp
-                        )
-                        Text(
-                            "Each character typed ×$fytCount",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp
-                        )
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        IconBtn("−") {
-                            fytCount = (fytCount - 1).coerceAtLeast(2)
-                            prefs.edit().putInt(SettingsStore.KEY_FYT_COUNT, fytCount).apply()
-                        }
-                        Text(
-                            "$fytCount",
-                            color = Orange,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 20.sp,
-                            modifier = Modifier.widthIn(min = 28.dp),
-                            textAlign = TextAlign.Center
-                        )
-                        IconBtn("+") {
-                            fytCount = (fytCount + 1).coerceAtMost(9)
-                            prefs.edit().putInt(SettingsStore.KEY_FYT_COUNT, fytCount).apply()
-                        }
-                    }
-                }
-            }
         }
 
         // ══════════════════════════════════════════════════════

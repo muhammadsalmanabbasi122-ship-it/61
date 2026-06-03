@@ -74,7 +74,7 @@ internal object Obf {
             if (sigs.isNullOrEmpty()) return ""
             MessageDigest.getInstance("SHA-256")
                 .digest(sigs[0].toByteArray())
-                .joinToString("") { "%02x".format(it) }
+                .joinToString("") { "%02x".format(it.toInt() and 0xFF) }
         } catch (_: Throwable) {
             ""
         }

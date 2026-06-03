@@ -33,8 +33,10 @@ class MainActivity : ComponentActivity() {
     private val pickFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let {
             try { contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) {}
-            val name = queryDisplayName(it)
-            AutoTypeEngine.loadFromUri(this, it, name)
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                val name = queryDisplayName(it)
+                AutoTypeEngine.loadFromUri(this@MainActivity, it, name)
+            }
         }
     }
 
@@ -204,7 +206,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onResume() {
         super.onResume()
-        stopTyperIfRunning()
+        val withinStartWindow = System.currentTimeMillis() - lastStartAtMs < 2000L
+        if (!withinStartWindow) stopTyperIfRunning()
     }
 }
 

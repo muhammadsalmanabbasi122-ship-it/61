@@ -104,6 +104,9 @@ object KeyboardLayouts {
         else -> ENGLISH_QWERTY
     }
 
-    val LANGUAGE_CYCLE = listOf("en")
-    fun nextLanguage(current: String): String = "en"
+    val LANGUAGE_CYCLE = listOf("en", "ur", "ar")
+    fun nextLanguage(current: String): String {
+        val idx = LANGUAGE_CYCLE.indexOf(current)
+        return LANGUAGE_CYCLE[(idx + 1) % LANGUAGE_CYCLE.size]
+    }
 }

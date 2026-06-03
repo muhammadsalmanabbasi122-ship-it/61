@@ -26,6 +26,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Draws a small orange floating dot overlay that the user can drag over the SEND button
@@ -60,8 +61,12 @@ class FloatingPointerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
         showOverlay()
+        if (dot == null) {
+            stopSelf()
+            return
+        }
+        instance = this
         startAutoClick()
     }
 
@@ -109,9 +114,12 @@ class FloatingPointerService : Service() {
                 delay(700L)
 
                 // Dispatch gesture via whichever accessibility service is connected.
-                val clicked = GhostTypeAccessibilityService.instance?.clickAt(cx.toFloat(), cy.toFloat())
-                    ?: GhostTypePointerService.instance?.clickAt(cx.toFloat(), cy.toFloat())
-                    ?: false
+                // Must run on main thread — dispatchGesture() requires it.
+                val clicked = withContext(Dispatchers.Main) {
+                    GhostTypeAccessibilityService.instance?.clickAt(cx.toFloat(), cy.toFloat())
+                        ?: GhostTypePointerService.instance?.clickAt(cx.toFloat(), cy.toFloat())
+                        ?: false
+                }
 
                 // If neither service is connected, wait a bit longer before retrying.
                 if (!clicked) delay(2000L)
@@ -200,8 +208,8 @@ class FloatingPointerService : Service() {
                 }
                 MotionEvent.ACTION_UP -> {
                     SettingsStore.prefs(this).edit()
-                        .putInt(SettingsStore.KEY_POINTER_X, p.x + half)
-                        .putInt(SettingsStore.KEY_POINTER_Y, p.y + half)
+                        .putInt(SettingsStore.KEY_POINTER_X, (p.x + half).coerceAtLeast(0))
+                        .putInt(SettingsStore.KEY_POINTER_Y, (p.y + half).coerceAtLeast(0))
                         .apply()
                     true
                 }
@@ -238,17 +246,19 @@ class FloatingPointerService : Service() {
      * system can still route accessibility gestures to overlay windows.
      */
     fun temporarilyHideForClick(durationMs: Long = 600L) {
-        val v = dot ?: return
-        val p = params ?: return
-
+        if (dot == null || params == null) return
         hidingForClick = true
         mainHandler.removeCallbacksAndMessages(HIDE_TOKEN)
 
         mainHandler.post {
+            val v = dot ?: return@post
+            val p = params ?: return@post
             try { wm?.removeView(v) } catch (_: Throwable) {}
         }
         mainHandler.postAtTime({
             try {
+                val v = dot ?: return@postAtTime
+                val p = params ?: return@postAtTime
                 wm?.addView(v, p)
                 applyLockedFlag()
             } catch (_: Throwable) {}

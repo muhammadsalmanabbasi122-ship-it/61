@@ -101,7 +101,7 @@ fun PlansScreen() {
     val planExpired = !isLifetime && expiryMs > 0L && remainingMs <= 0L
 
     LaunchedEffect(selectedPlan, expiryMs) {
-        while (true) {
+        while (isActive) {
             delay(1000L)
             nowMs = System.currentTimeMillis()
             if (!isLifetime && expiryMs > 0L && System.currentTimeMillis() >= expiryMs) break

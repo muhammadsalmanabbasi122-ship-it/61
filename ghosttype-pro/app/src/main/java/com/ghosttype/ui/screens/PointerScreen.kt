@@ -42,22 +42,25 @@ fun PointerScreen() {
     var pointerX          by remember { mutableStateOf(prefs.getInt(SettingsStore.KEY_POINTER_X, -1)) }
     var pointerY          by remember { mutableStateOf(prefs.getInt(SettingsStore.KEY_POINTER_Y, -1)) }
     var dotRunning        by remember { mutableStateOf(FloatingPointerService.instance != null) }
+    var dotLocked         by remember { mutableStateOf(prefs.getBoolean(SettingsStore.KEY_POINTER_LOCKED, false)) }
     var pointerSizeDp     by remember { mutableStateOf(prefs.getInt(SettingsStore.KEY_POINTER_SIZE_DP, 28).coerceIn(16, 72)) }
     var hasOverlayPerm    by remember { mutableStateOf(Settings.canDrawOverlays(ctx)) }
     var clickDelayMs      by remember { mutableStateOf(prefs.getInt(SettingsStore.KEY_POINTER_CLICK_DELAY_MS, 0).coerceIn(0, 5000)) }
 
     // Refresh position + dot status every 600 ms so UI always stays in sync
     LaunchedEffect(Unit) {
-        while (true) {
+        while (isActive) {
             kotlinx.coroutines.delay(600)
             pointerX       = prefs.getInt(SettingsStore.KEY_POINTER_X, -1)
             pointerY       = prefs.getInt(SettingsStore.KEY_POINTER_Y, -1)
             dotRunning     = FloatingPointerService.instance != null
+            dotLocked      = prefs.getBoolean(SettingsStore.KEY_POINTER_LOCKED, false)
             hasOverlayPerm = Settings.canDrawOverlays(ctx)
         }
     }
 
     val positionSet = pointerX >= 0 && pointerY >= 0
+    val dotVisible = dotRunning && !dotLocked
 
     Column(
         modifier = Modifier
@@ -164,6 +167,7 @@ fun PointerScreen() {
                     checked = pointerEnabled,
                     onCheckedChange = {
                         pointerEnabled = it
+                        dotRunning = it
                         prefs.edit().putBoolean(SettingsStore.KEY_POINTER_ENABLED, it).apply()
                         if (it) FloatingPointerService.start(ctx)
                         else    FloatingPointerService.stop(ctx)
@@ -174,6 +178,24 @@ fun PointerScreen() {
                     )
                 )
             }
+        }
+
+        // ── Start Pointer button ────────────────────────────────
+        Button(
+            onClick = {
+                pointerEnabled = true
+                dotRunning = true
+                prefs.edit().putBoolean(SettingsStore.KEY_POINTER_ENABLED, true).apply()
+                FloatingPointerService.start(ctx)
+            },
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = BlueP,
+                contentColor = Color.White
+            )
+        ) {
+            Text("▶  Start Pointer", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
         }
 
         // ── Dot control card ────────────────────────────────────
@@ -193,15 +215,19 @@ fun PointerScreen() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (dotRunning) GreenOk.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant)
+                    .background(if (dotVisible) GreenOk.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant)
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(if (dotRunning) GreenOk else Color(0xFF888888)))
+                Box(Modifier.size(8.dp).clip(CircleShape).background(if (dotVisible) GreenOk else Color(0xFF888888)))
                 Text(
-                    if (dotRunning) "🟢 Blue dot is visible on screen" else "Dot is hidden",
-                    color = if (dotRunning) GreenOk else MaterialTheme.colorScheme.onSurfaceVariant,
+                    when {
+                        dotVisible -> "🟢 Orange dot is visible on screen"
+                        dotRunning && dotLocked -> "🔒 Dot is locked (hidden)"
+                        else -> "Dot is hidden"
+                    },
+                    color = if (dotVisible) GreenOk else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp, fontWeight = FontWeight.SemiBold
                 )
             }
@@ -211,6 +237,7 @@ fun PointerScreen() {
                 Button(
                     onClick = {
                         pointerEnabled = true
+                        dotRunning = true
                         prefs.edit().putBoolean(SettingsStore.KEY_POINTER_ENABLED, true).apply()
                         FloatingPointerService.start(ctx)
                     },
@@ -385,33 +412,50 @@ fun PointerScreen() {
                         Text("Click Delay", color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         Text("Wait this long after typing before clicking Send", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     }
-                    Text(
-                        if (clickDelayMs == 0) "Off" else "${clickDelayMs / 1000}.${(clickDelayMs % 1000) / 100}s",
-                        color = OrangeP,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 15.sp
-                    )
                 }
-                Slider(
-                    value = clickDelayMs.toFloat(),
-                    onValueChange = { clickDelayMs = (it / 100).toInt() * 100 },
-                    onValueChangeFinished = {
-                        prefs.edit().putInt(SettingsStore.KEY_POINTER_CLICK_DELAY_MS, clickDelayMs).apply()
-                    },
-                    valueRange = 0f..5000f,
-                    steps = 49,
-                    colors = SliderDefaults.colors(
-                        thumbColor = OrangeP,
-                        activeTrackColor = OrangeP,
-                        inactiveTrackColor = OrangeP.copy(alpha = 0.25f)
-                    )
-                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("0s (Off)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                    Text("5s", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                    OutlinedButton(
+                        onClick = {
+                            clickDelayMs = (clickDelayMs - 500).coerceAtLeast(0)
+                            prefs.edit().putInt(SettingsStore.KEY_POINTER_CLICK_DELAY_MS, clickDelayMs).apply()
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = OrangeP),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, OrangeP.copy(alpha = 0.5f)),
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Text("−", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            if (clickDelayMs == 0) "Off" else "${clickDelayMs / 1000}.${(clickDelayMs % 1000) / 100}s",
+                            color = OrangeP,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 22.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            clickDelayMs = (clickDelayMs + 500).coerceAtMost(5000)
+                            prefs.edit().putInt(SettingsStore.KEY_POINTER_CLICK_DELAY_MS, clickDelayMs).apply()
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = OrangeP),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, OrangeP.copy(alpha = 0.5f)),
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Text("+", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+                    }
                 }
             }
         }

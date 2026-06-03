@@ -103,7 +103,7 @@ class GhostTypeIMEService : InputMethodService() {
             p.getBoolean(SettingsStore.KEY_FYT_ENABLED, false) -> {
                 // FYT Mode: each character repeated N times (e.g. "hi" + 3 → "hhhiii")
                 // Other font styles bypassed when FYT is active.
-                val count = p.getInt(SettingsStore.KEY_FYT_COUNT, 3).coerceIn(2, 9)
+                val count = p.getInt(SettingsStore.KEY_FYT_COUNT, 3).coerceIn(1, 50)
                 val sb = StringBuilder()
                 var i = 0
                 while (i < text.length) {
