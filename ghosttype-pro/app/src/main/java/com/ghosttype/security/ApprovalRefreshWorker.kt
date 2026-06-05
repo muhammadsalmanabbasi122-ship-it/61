@@ -80,13 +80,6 @@ class ApprovalRefreshWorker(
             Result.retry()
         }
     }
-            Result.success()
-        } catch (_: Throwable) {
-            // Transient failures (DNS hiccup, redirect, etc.) get retried
-            // by WorkManager with exponential backoff.
-            Result.retry()
-        }
-    }
 
     companion object {
         /** Broadcast action the IME listens for to force a lock-screen
