@@ -30,9 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ghosttype.R
 import com.ghosttype.security.Obf
+import com.ghosttype.BuildConfig
 import com.ghosttype.security.ObfConstants
-
-private const val APP_VERSION  = "1.10.0"
 private val Orange             = Color(0xFFFF8C00)
 private val DarkCard           = Color(0xFF1A1A1A)
 private val DarkBorder         = Color(0xFF2A2A2A)
@@ -96,7 +95,7 @@ fun AboutScreen() {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Badge(text = "v$APP_VERSION", bg = Orange.copy(alpha = 0.15f), textColor = Orange)
+                    Badge(text = "v${BuildConfig.VERSION_NAME}", bg = Orange.copy(alpha = 0.15f), textColor = Orange)
                     Badge(text = "Android 7.0+", bg = Color(0xFF2A2A2A), textColor = Color(0xFFAAAAAA))
                 }
 

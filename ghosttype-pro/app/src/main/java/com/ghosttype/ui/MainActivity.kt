@@ -357,7 +357,7 @@ fun AppRoot(
                 }
 
                 Text(
-                    "v1.10.0",
+                    "v${com.ghosttype.BuildConfig.VERSION_NAME}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(start = 20.dp, bottom = 20.dp, end = 20.dp)
