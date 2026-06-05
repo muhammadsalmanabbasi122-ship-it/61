@@ -11,7 +11,6 @@ import java.io.File
 import java.io.InputStreamReader
 import java.net.InetSocketAddress
 import java.net.Socket
-import java.security.MessageDigest
 import java.util.zip.ZipFile
 
 /**
@@ -33,8 +32,7 @@ object Hardener {
                !isEmulator()             &&
                !isFridaPresent()         &&
                !isCodeTampered(ctx)      &&
-               !isApkModified(ctx)       &&
-               !isResourcesTampered(ctx)
+               !isApkModified(ctx)
     }
 
     // ─── Root detection ──────────────────────────────────────────
@@ -68,16 +66,8 @@ object Hardener {
     // ─── Debugger detection ──────────────────────────────────────
 
     private fun isDebuggerAttached(): Boolean {
-        // Live debugger
         if (Debug.isDebuggerConnected()) return true
         if (Debug.waitingForDebugger()) return true
-        // debuggable flag (already checked by SecurityGuard, double-check)
-        try {
-            val ai = BuildConfig.APPLICATION_ID.let { id ->
-                val pm = object : android.content.pm.PackageManager() {}
-                // fallback — check via BuildConfig
-            }
-        } catch (_: Exception) {}
         return false
     }
 
@@ -191,33 +181,12 @@ object Hardener {
         } catch (_: Exception) { false }
     }
 
-    // ─── APK signature re-verification ───────────────────────────
+    // ─── Signature re-verification ───────────────────────────────
 
     private fun isApkModified(ctx: Context): Boolean {
         val actual = Obf.currentSigningSha(ctx)
         if (actual.isEmpty()) return true
         return !actual.equals(ObfConstants.EXPECTED_SIGNING_SHA256, ignoreCase = true)
-    }
-
-    // ─── Resource integrity (branding strings) ───────────────────
-
-    private fun isResourcesTampered(ctx: Context): Boolean {
-        // Verify that critical branding strings haven't been modified
-        // in the APK resources. Each string is hashed at runtime and
-        // compared against the hardcoded expected hash.
-        val checks = mapOf<String, String>(
-            ctx.getString(com.ghosttype.R.string.app_name) to
-                sha256("GhostType Pro"),
-        )
-        for ((actual, expected) in checks) {
-            if (actual != expected) return true
-        }
-        return false
-    }
-
-    private fun sha256(s: String): String {
-        val dig = MessageDigest.getInstance("SHA-256")
-        return dig.digest(s.toByteArray()).joinToString("") { "%02x".format(it) }
     }
 
     /** Launch the bricked activity from any context. */
