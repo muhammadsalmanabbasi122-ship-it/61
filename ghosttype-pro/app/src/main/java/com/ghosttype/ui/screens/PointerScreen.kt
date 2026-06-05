@@ -39,7 +39,6 @@ fun PointerScreen() {
     val prefs = remember { SettingsStore.prefs(ctx) }
 
     var pointerEnabled    by remember { mutableStateOf(prefs.getBoolean(SettingsStore.KEY_POINTER_ENABLED, false)) }
-    var multiClick        by remember { mutableStateOf(prefs.getBoolean(SettingsStore.KEY_POINTER_MULTI_CLICK, false)) }
     var pointerX          by remember { mutableStateOf(prefs.getInt(SettingsStore.KEY_POINTER_X, -1)) }
     var pointerY          by remember { mutableStateOf(prefs.getInt(SettingsStore.KEY_POINTER_Y, -1)) }
     var dotRunning        by remember { mutableStateOf(FloatingPointerService.instance != null) }
@@ -356,27 +355,6 @@ fun PointerScreen() {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("Settings", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Multi-click (3× per send)", color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
-                    Text("Click 3 times for stubborn send buttons", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                }
-                Switch(
-                    checked = multiClick,
-                    onCheckedChange = {
-                        multiClick = it
-                        prefs.edit().putBoolean(SettingsStore.KEY_POINTER_MULTI_CLICK, it).apply()
-                    },
-                    colors = SwitchDefaults.colors(checkedThumbColor = Color.Black, checkedTrackColor = OrangeP)
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
 
             // ── Click delay slider ───────────────────────────────
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
