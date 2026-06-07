@@ -257,7 +257,6 @@ object ApprovalGate {
 
     /** Map GitHub plan name → duration in ms (-1 = Lifetime). */
     private fun planDurationMs(plan: String): Long = when {
-        plan.equals("Test",      ignoreCase = true) -> 10L * 60 * 1000
         plan.equals("Trial",     ignoreCase = true) -> 7L  * 24 * 3600 * 1000
         plan.equals("Monthly",   ignoreCase = true) -> 30L * 24 * 3600 * 1000
         plan.equals("Quarterly", ignoreCase = true) -> 90L * 24 * 3600 * 1000
@@ -267,7 +266,6 @@ object ApprovalGate {
     }
 
     private fun planDurationLabel(plan: String): String = when {
-        plan.equals("Test",      ignoreCase = true) -> "10 Min"
         plan.equals("Trial",     ignoreCase = true) -> "7 Days"
         plan.equals("Monthly",   ignoreCase = true) -> "1 Month"
         plan.equals("Quarterly", ignoreCase = true) -> "3 Months"
@@ -277,7 +275,6 @@ object ApprovalGate {
     }
 
     private fun planPrice(plan: String): String = when {
-        plan.equals("Test",      ignoreCase = true) -> "FREE"
         plan.equals("Trial",     ignoreCase = true) -> "FREE"
         plan.equals("Monthly",   ignoreCase = true) -> "$2"
         plan.equals("Quarterly", ignoreCase = true) -> "$5"

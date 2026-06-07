@@ -41,8 +41,6 @@ private data class Plan(
 )
 
 private val PLANS = listOf(
-    Plan("🧪", "TEST",   "Test",      "10 Min",   "FREE",    SkyBlue,
-        listOf("10-minute trial run", "All features enabled", "Auto-expires in 10 min")),
     Plan("🎯", null,     "Trial",     "7 Days",   "FREE",    SkyBlue,
         listOf("Full keyboard access", "All themes", "Auto-Type basic")),
     Plan("📅", null,     "Monthly",   "1 Month",  "$2",      Orange,
