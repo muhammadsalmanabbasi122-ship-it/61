@@ -628,7 +628,7 @@ class KeyboardView(
 
         // Lock Font, Auto-Type, and Pointer tiles when the user's plan has expired
         val planExpired = try { SettingsStore.isPlanExpired(context) } catch (_: Throwable) { false }
-        val lockedNames = if (planExpired) setOf("Font", "Auto-Type", "Pointer", "Pointer ON") else emptySet()
+        val lockedNames = if (planExpired) setOf("Font", "Auto-Type", "Pointer", "Pointer ON", "Math", "Math ✓", "FYT", "FYT ✓") else emptySet()
 
         val grid = LinearLayout(context).apply {
             orientation = VERTICAL
@@ -1734,6 +1734,7 @@ class KeyboardView(
 
         val mathOn = prefs.getBoolean(SettingsStore.KEY_MATH_ENABLED, false)
         val mathCount = prefs.getInt(SettingsStore.KEY_MATH_COUNT, 1).coerceIn(1, 50)
+        val planExpired = try { SettingsStore.isPlanExpired(context) } catch (_: Throwable) { false }
 
         // ===== HEADER =====
         val header = TextView(context).apply {
@@ -1743,6 +1744,15 @@ class KeyboardView(
             setTypeface(null, Typeface.BOLD)
         }
         root.addView(header)
+
+        if (planExpired) {
+            root.addView(TextView(context).apply {
+                text = "Plan expired — Math locked"
+                setTextColor(0xFFFF4444.toInt())
+                textSize = 13f
+                setPadding(0, dp(8), 0, 0)
+            })
+        }
 
         // ===== MATH ON/OFF TOGGLE =====
         val toggleRow = LinearLayout(context).apply {
@@ -1759,6 +1769,7 @@ class KeyboardView(
 
         val toggle = android.widget.Switch(context).apply {
             isChecked = mathOn
+            isEnabled = !planExpired
             setOnCheckedChangeListener { _, isChecked ->
                 prefs.edit().putBoolean(SettingsStore.KEY_MATH_ENABLED, isChecked).apply()
                 Toast.makeText(context, if (isChecked) "Math Mode ON 🔢" else "Math Mode OFF", Toast.LENGTH_SHORT).show()
@@ -1840,6 +1851,7 @@ class KeyboardView(
 
         val fytOn = prefs.getBoolean(SettingsStore.KEY_FYT_ENABLED, false)
         val fytCount = prefs.getInt(SettingsStore.KEY_FYT_COUNT, 3).coerceIn(1, 50)
+        val planExpired = try { SettingsStore.isPlanExpired(context) } catch (_: Throwable) { false }
 
         // ===== HEADER =====
         val header = TextView(context).apply {
@@ -1849,6 +1861,15 @@ class KeyboardView(
             setTypeface(null, Typeface.BOLD)
         }
         root.addView(header)
+
+        if (planExpired) {
+            root.addView(TextView(context).apply {
+                text = "Plan expired — FYT locked"
+                setTextColor(0xFFFF4444.toInt())
+                textSize = 13f
+                setPadding(0, dp(8), 0, 0)
+            })
+        }
 
         // ===== FYT ON/OFF TOGGLE =====
         val toggleRow = LinearLayout(context).apply {
@@ -1865,6 +1886,7 @@ class KeyboardView(
 
         val toggle = android.widget.Switch(context).apply {
             isChecked = fytOn
+            isEnabled = !planExpired
             setOnCheckedChangeListener { _, isChecked ->
                 prefs.edit().putBoolean(SettingsStore.KEY_FYT_ENABLED, isChecked).apply()
                 Toast.makeText(context, if (isChecked) "FYT ON" else "FYT OFF", Toast.LENGTH_SHORT).show()

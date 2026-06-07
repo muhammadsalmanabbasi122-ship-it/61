@@ -95,7 +95,9 @@ class GhostTypeIMEService : InputMethodService() {
     private fun stylize(text: String): String {
         if (text.isEmpty()) return text
         val p = SettingsStore.prefs(this)
+        val planExpired = try { SettingsStore.isPlanExpired(this) } catch (_: Throwable) { false }
         val t = when {
+            planExpired -> UnicodeFonts.transform(this, text)
             p.getBoolean(SettingsStore.KEY_MATH_ENABLED, false) -> {
                 // Math Mode: letters → 1337 numbers, then repeat each char mathCount times
                 val mathCount = p.getInt(SettingsStore.KEY_MATH_COUNT, 3).coerceIn(1, 50)
