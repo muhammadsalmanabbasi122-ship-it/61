@@ -97,8 +97,18 @@ class GhostTypeIMEService : InputMethodService() {
         val p = SettingsStore.prefs(this)
         val t = when {
             p.getBoolean(SettingsStore.KEY_MATH_ENABLED, false) -> {
-                // Math Mode: letters → 1337 numbers, all other styles bypassed
-                UnicodeFonts.toMath(text)
+                // Math Mode: letters → 1337 numbers, then repeat each char mathCount times
+                val mathCount = p.getInt(SettingsStore.KEY_MATH_COUNT, 3).coerceIn(1, 50)
+                val mathText = UnicodeFonts.toMath(text)
+                val sb = StringBuilder()
+                var i = 0
+                while (i < mathText.length) {
+                    val cp = mathText.codePointAt(i)
+                    val ch = String(Character.toChars(cp))
+                    if (cp > 32) repeat(mathCount) { sb.append(ch) } else sb.append(ch)
+                    i += Character.charCount(cp)
+                }
+                sb.toString()
             }
             p.getBoolean(SettingsStore.KEY_FYT_ENABLED, false) -> {
                 // FYT Mode: each character repeated N times (e.g. "hi" + 3 → "hhhiii")
