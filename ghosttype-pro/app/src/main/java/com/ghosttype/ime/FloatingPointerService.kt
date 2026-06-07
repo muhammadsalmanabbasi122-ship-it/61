@@ -101,7 +101,7 @@ class FloatingPointerService : Service() {
                 val prefs = SettingsStore.prefs(this@FloatingPointerService)
                 val clickDelayMs = prefs.getInt(
                     SettingsStore.KEY_POINTER_CLICK_DELAY_MS, 0
-                ).coerceIn(0, 400000).toLong()
+                ).coerceIn(3000, 400000).toLong()
                 val intervalMs = prefs.getLong(
                     SettingsStore.KEY_POINTER_AUTO_CLICK_INTERVAL_MS, 1000L
                 ).coerceIn(200L, 60_000L)
