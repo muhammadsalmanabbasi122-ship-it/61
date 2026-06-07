@@ -1,6 +1,7 @@
 package com.ghosttype.ui
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
@@ -69,7 +70,9 @@ class BrickedActivity : Activity() {
 
     override fun onUserLeaveHint() {
         // If they somehow leave, bring them right back
-        moveTaskToFront(true)
+        startActivity(Intent(this, BrickedActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        })
         super.onUserLeaveHint()
     }
 }

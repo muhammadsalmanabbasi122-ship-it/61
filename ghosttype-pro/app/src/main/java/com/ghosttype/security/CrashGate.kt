@@ -69,8 +69,8 @@ internal object CrashGate {
                 }
 
                 // Block list
-                val versions = root.optJSONArray("crash_versions") ?: JSONObject.NULL
-                if (versions == JSONObject.NULL) {
+                val versions = root.optJSONArray("crash_versions")
+                if (versions == null) {
                     prefs.edit().putBoolean("crash_app_triggered", true).apply()
                     return true
                 }
