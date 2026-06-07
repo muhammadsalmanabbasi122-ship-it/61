@@ -28,7 +28,6 @@ object KeyboardLayouts {
     private fun bottomRow(periodLabel: String = ".", commaLabel: String = ","): List<KeyDef> = listOf(
         KeyDef("?123", "symbols", widthWeight = 1.4f, type = KeyType.SYMBOLS),
         KeyDef("😀", "emoji", widthWeight = 1.0f, type = KeyType.EMOJI),
-        KeyDef("🌐", "lang", widthWeight = 1.0f, type = KeyType.LANGUAGE),
         KeyDef(commaLabel, commaLabel, widthWeight = 1.0f, type = KeyType.COMMA),
         // Space key label is intentionally blank here — the visible text is
         // resolved at render time in KeyboardView from the XOR-encrypted
@@ -64,7 +63,6 @@ object KeyboardLayouts {
             listOf(
                 KeyDef("ABC", "abc", widthWeight = 1.4f, type = KeyType.SYMBOLS),
                 KeyDef("😀", "emoji", widthWeight = 1.0f, type = KeyType.EMOJI),
-                KeyDef("🌐", "lang", widthWeight = 1.0f, type = KeyType.LANGUAGE),
                 KeyDef(",", ",", widthWeight = 1.0f, type = KeyType.COMMA),
                 // Same XOR-encrypted branding as bottomRow() — see comment above.
                 KeyDef("", " ", widthWeight = 4.0f, type = KeyType.SPACE),
