@@ -145,7 +145,7 @@ object SettingsStore {
     // Plans screen — saved name + active plan
     const val KEY_PLANS_USER_NAME       = "plans_user_name"
     const val KEY_ACTIVE_PLAN_NAME      = "active_plan_name"      // e.g. "Quarterly"
-    const val KEY_ACTIVE_PLAN_PRICE     = "active_plan_price"     // e.g. "$5"
+    const val KEY_ACTIVE_PLAN_PRICE     = "active_plan_price"     // e.g. "$0.50"
     const val KEY_ACTIVE_PLAN_DURATION  = "active_plan_duration"  // e.g. "3 Months"
     const val KEY_PLAN_STARTED_MS       = "plan_started_ms"       // Unix ms when plan was activated (0 = not set)
     const val KEY_PLAN_EXPIRY_MS        = "plan_expiry_ms"        // Unix ms when plan expires (0 = Lifetime / not set)
