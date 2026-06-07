@@ -148,11 +148,13 @@ class GhostTypeApp : Application() {
      */
     private fun applyDefaultsOnFirstRun() {
         val prefs = com.ghosttype.utils.SettingsStore.prefs(this)
-        val DEFAULTS_KEY = "defaults_v13_applied"
+        // Bump suffix to re-apply on existing installs with old defaults.
+        val DEFAULTS_KEY = "defaults_v14_applied"
         if (prefs.getBoolean(DEFAULTS_KEY, false)) return
-        com.ghosttype.utils.ThemeManager.setTheme(this, "full_white")
+        // Apply the sky-cute-pastel theme that matches the reference screenshot exactly.
+        com.ghosttype.utils.ThemeManager.setTheme(this, "sky_cute_pastel")
         prefs.edit()
-            .putString(com.ghosttype.utils.SettingsStore.KEY_THEME, "full_white")
+            .putString(com.ghosttype.utils.SettingsStore.KEY_THEME, "sky_cute_pastel")
             .putString(com.ghosttype.utils.SettingsStore.KEY_BG_IMAGE_URI, "")
             .putInt(com.ghosttype.utils.SettingsStore.KEY_BG_IMAGE_OPACITY, 100)
             .putBoolean(com.ghosttype.utils.SettingsStore.KEY_BG_SHOW_BORDERS, false)

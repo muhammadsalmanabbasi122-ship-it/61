@@ -16,6 +16,19 @@ data class KeyboardTheme(
 
 object ThemeManager {
     val BUILT_IN: List<KeyboardTheme> = listOf(
+        // ── EXACT match to the pastel-blue screenshot ──────────────────────
+        // bg: soft sky-blue #C3D9EF · keys: pure white · text: dark navy
+        // 3D shadow ON, rounded pill shape — 100% same as reference image.
+        KeyboardTheme(
+            id = "sky_cute_pastel",
+            name = "🩵 Sky Cute Pastel",
+            keyboardBg   = Color.parseColor("#C3D9EF"),
+            keyBg        = Color.parseColor("#FFFFFF"),
+            keyText      = Color.parseColor("#3D5573"),
+            suggestionBg = Color.parseColor("#C3D9EF"),
+            pressedKey   = Color.parseColor("#AECDE6"),
+            accent       = Color.parseColor("#5590BF")
+        ),
         KeyboardTheme(
             id = "cute_pill_blue",
             name = "🩵 Cute Pill Blue",
