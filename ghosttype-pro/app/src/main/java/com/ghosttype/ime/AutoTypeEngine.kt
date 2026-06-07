@@ -252,22 +252,18 @@ object AutoTypeEngine {
             // user-facing wait (gives visual feedback that the engine is
             // counting down) and is hidden only for the actual tap window.
             if (pointerClickDelayMs > 0) delay(pointerClickDelayMs)
-            FloatingPointerService.instance?.temporarilyHideForClick(900L)
-            // 650 ms gives the main-looper removeView() call plenty of
-            // headroom even on budget phones under heavy load (a full
-            // layout pass is typically < 16 ms, but we add extra margin
-            // so the dot is definitely gone before the gesture fires).
-            delay(650)
+            FloatingPointerService.instance?.temporarilyHideForClick(500L)
+            delay(200)
             var ok = false
             repeat(clickCount) {
                 ok = gestureClickAt(px.toFloat(), py.toFloat())
                 // Wait longer than the stroke duration (120 ms) so the
                 // gesture fully completes before we fire the next click.
-                if (ok) delay(200)
+                if (ok) delay(220)
             }
             // Give the chat app time to react (button animation, message
             // added to list, keyboard possibly resizing) before we move on.
-            if (ok) delay(300)
+            if (ok) delay(220)
             return ok
         }
         return when (method) {
@@ -295,19 +291,13 @@ object AutoTypeEngine {
                     // frame or two to swap the mic icon for the send icon
                     // and to actually mark it clickable. Without retries
                     // the very first send of a session can miss.
-                    var sentViaAcc = false
                     repeat(3) { attempt ->
-                        if (acc?.pressSend() == true) { sentViaAcc = true; return@repeat }
-                        delay(150L)
+                        if (acc?.pressSend() == true) return true
+                        delay(120L)
+                        if (attempt == 1 && pointerOn) {
+                            if (pointerClick()) return true
+                        }
                     }
-                    if (sentViaAcc) return true
-                    // All 3 accessibility attempts failed — fall back to the
-                    // floating pointer if the user enabled it. This covers:
-                    //   • Chat-app updates that change resource IDs before
-                    //     our per-app id list catches up.
-                    //   • Apps that render the send button inside a Compose
-                    //     or WebView surface with no accessibility resource id.
-                    if (pointerOn && pointerClick()) return true
                     // Don't fire IME Enter here — in a multi-line chat
                     // field that just inserts "\n" instead of sending.
                     return false
