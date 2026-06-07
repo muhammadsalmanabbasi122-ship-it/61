@@ -2084,27 +2084,6 @@ class KeyboardView(
         toggleRow.addView(toggle, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
         root.addView(toggleRow)
 
-        // ===== SINGLE / MULTI TOGGLE =====
-        val modeRow = LinearLayout(context).apply {
-            orientation = HORIZONTAL
-            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
-            setPadding(0, dp(12), 0, 0)
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        modeRow.addView(TextView(context).apply {
-            text = "Click Mode"
-            setTextColor(theme.keyText)
-            textSize = 16f
-        }, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
-
-        val modeBtn = bigBtn(if (multiClick) "Multi" else "Single", if (multiClick) theme.accent else theme.keyBg) {
-            val newMulti = !prefs.getBoolean(SettingsStore.KEY_POINTER_MULTI_CLICK, false)
-            prefs.edit().putBoolean(SettingsStore.KEY_POINTER_MULTI_CLICK, newMulti).apply()
-            rebuildPointer()
-        }
-        modeRow.addView(modeBtn, LayoutParams(dp(80), dp(38)))
-        root.addView(modeRow)
-
         // ===== CLICK DELAY =====
         val delaySection = LinearLayout(context).apply {
             orientation = VERTICAL
