@@ -48,10 +48,10 @@ private data class LockPlan(
 
 private val LOCK_PLANS = listOf(
     LockPlan("🎯", Color(0xFF0066AA), null,      "Trial",     "7 Days",   "FREE",    Color(0xFF66BBFF)),
-    LockPlan("📅", Color(0xFFBB5500), null,      "Monthly",   "1 Month",  "Rs 50",   Orange),
-    LockPlan("🔥", Color(0xFF993300), "POPULAR", "Quarterly", "3 Months", "Rs 120",  Orange, true),
-    LockPlan("⚡", Color(0xFF994400), null,      "Half Year", "6 Months", "Rs 250",  Orange),
-    LockPlan("👑", Color(0xFF997700), "BEST",    "Lifetime",  "Forever",  "Rs 500",  Color(0xFFFFD700), true),
+    LockPlan("📅", Color(0xFFBB5500), null,      "Monthly",   "1 Month",  "$2",     Orange),
+    LockPlan("🔥", Color(0xFF993300), "POPULAR", "Quarterly", "3 Months", "$5",     Orange, true),
+    LockPlan("⚡", Color(0xFF994400), null,      "Half Year", "6 Months", "$10",    Orange),
+    LockPlan("👑", Color(0xFF997700), "BEST",    "Lifetime",  "Forever",  "$20",    Color(0xFFFFD700), true),
 )
 
 @Composable

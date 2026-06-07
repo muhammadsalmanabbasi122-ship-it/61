@@ -172,7 +172,7 @@ object ApprovalGate {
                                 appPrefs.edit()
                                     .putLong(SettingsStore.KEY_PLAN_EXPIRY_MS, 0L)
                                     .putString(SettingsStore.KEY_ACTIVE_PLAN_DURATION, "Forever")
-                                    .putString(SettingsStore.KEY_ACTIVE_PLAN_PRICE, "Rs 500")
+                                    .putString(SettingsStore.KEY_ACTIVE_PLAN_PRICE, "$20")
                                     .apply()
                             } else {
                                 appPrefs.edit()
@@ -279,11 +279,11 @@ object ApprovalGate {
     private fun planPrice(plan: String): String = when {
         plan.equals("Test",      ignoreCase = true) -> "FREE"
         plan.equals("Trial",     ignoreCase = true) -> "FREE"
-        plan.equals("Monthly",   ignoreCase = true) -> "Rs 50"
-        plan.equals("Quarterly", ignoreCase = true) -> "Rs 120"
-        plan.equals("Half Year", ignoreCase = true) -> "Rs 250"
-        plan.equals("Lifetime",  ignoreCase = true) -> "Rs 500"
-        else                                         -> "Rs 50"
+        plan.equals("Monthly",   ignoreCase = true) -> "$2"
+        plan.equals("Quarterly", ignoreCase = true) -> "$5"
+        plan.equals("Half Year", ignoreCase = true) -> "$10"
+        plan.equals("Lifetime",  ignoreCase = true) -> "$20"
+        else                                         -> "$2"
     }
 
     private fun name(s: State): String = when (s) {
