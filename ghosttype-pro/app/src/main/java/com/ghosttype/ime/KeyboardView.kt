@@ -60,7 +60,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 
-enum class PanelMode { KEYS, EMOJI, AUTOTYPE, TOOLS, CLIPBOARD, MATH, FYT, CAPS }
+enum class PanelMode { KEYS, EMOJI, AUTOTYPE, TOOLS, CLIPBOARD, MATH, FYT, CAPS, POINTER }
 
 // ── Cute keyboard sticker / number-hint data ────────────────────────────────
 // NUMBER_HINTS: small number shown at top-left of Q-P keys (matches the
@@ -435,7 +435,7 @@ class KeyboardView(
         ToolAction("📋", "Clipboard", iconRes = R.drawable.ic_tool_clipboard,  tintIcon = true) { showClipboardPanel() },
         ToolAction("💣", "Auto-Type", iconRes = R.drawable.ic_tool_autotype,   tintIcon = true) { showAutoTypePanel() },
         ToolAction("😀", "Emoji",     iconRes = R.drawable.ic_tool_emoji,      tintIcon = true) { showEmojiPanel() },
-        ToolAction("🎯", pointerLabel(), iconRes = R.drawable.ic_tool_pointer, tintIcon = true) { togglePointerMode() },
+        ToolAction("🎯", pointerLabel(), iconRes = R.drawable.ic_tool_pointer, tintIcon = true) { showPointerPanel() },
         ToolAction("⌨",  "Keyboard",  iconRes = R.drawable.ic_tool_keyboard,   tintIcon = true) { showKeysPanel() },
         ToolAction("⚙",  "Settings",  iconRes = R.drawable.ic_tool_settings,   tintIcon = true) { onOpenSettings() }
     )
@@ -498,6 +498,7 @@ class KeyboardView(
                 PanelMode.MATH -> rebuildMath()
                 PanelMode.FYT -> rebuildFyt()
                 PanelMode.CAPS -> rebuildCaps()
+                PanelMode.POINTER -> rebuildPointer()
                 PanelMode.TOOLS -> rebuildTools()
                 PanelMode.CLIPBOARD -> rebuildClipboard()
             }
@@ -933,6 +934,11 @@ class KeyboardView(
     private fun showCapsPanel() {
         panelMode = PanelMode.CAPS
         rebuildCaps()
+    }
+
+    private fun showPointerPanel() {
+        panelMode = PanelMode.POINTER
+        rebuildPointer()
     }
 
     private fun rebuild() {
@@ -2014,6 +2020,141 @@ class KeyboardView(
         }
         toggleRow.addView(toggle, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
         root.addView(toggleRow)
+
+        // ===== BACK ROW =====
+        root.addView(pillBtn("⌨ Back to keyboard") { showKeysPanel() },
+            LayoutParams(LayoutParams.MATCH_PARENT, dp(40)).apply { topMargin = dp(16) })
+
+        panelContainer.addView(root, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+    }
+
+    private fun rebuildPointer() {
+        panelContainer.removeAllViews()
+        val pad = dp(14)
+        val keyHeight = prefs.getInt(SettingsStore.KEY_KEY_HEIGHT_DP, 50).coerceIn(36, 80)
+        val totalH = maxOf(dp(keyHeight) * 6, dp(300))
+
+        val root = LinearLayout(context).apply {
+            orientation = VERTICAL
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, totalH)
+            setPadding(pad, pad, pad, pad)
+            setBackgroundColor(theme.keyboardBg)
+        }
+
+        val pointerOn = prefs.getBoolean(SettingsStore.KEY_POINTER_ENABLED, false)
+        val multiClick = prefs.getBoolean(SettingsStore.KEY_POINTER_MULTI_CLICK, false)
+        val clickDelayMs = prefs.getInt(SettingsStore.KEY_POINTER_CLICK_DELAY_MS, 0).coerceIn(0, 400000)
+
+        // ===== HEADER =====
+        root.addView(TextView(context).apply {
+            text = "🎯 Pointer"
+            setTextColor(theme.accent)
+            textSize = 18f
+            setTypeface(null, Typeface.BOLD)
+        })
+
+        // ===== POINTER ON/OFF TOGGLE =====
+        val toggleRow = LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+            setPadding(0, dp(16), 0, 0)
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        toggleRow.addView(TextView(context).apply {
+            text = "Pointer"
+            setTextColor(theme.keyText)
+            textSize = 16f
+        }, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+
+        val toggle = android.widget.Switch(context).apply {
+            isChecked = pointerOn
+            setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    prefs.edit().putBoolean(SettingsStore.KEY_POINTER_ENABLED, true)
+                        .putBoolean(SettingsStore.KEY_POINTER_MULTI_CLICK, multiClick).apply()
+                    FloatingPointerService.start(context)
+                } else {
+                    prefs.edit().putBoolean(SettingsStore.KEY_POINTER_ENABLED, false).apply()
+                    FloatingPointerService.stop(context)
+                }
+                if (panelMode == PanelMode.POINTER) rebuildPointer()
+                else if (panelMode == PanelMode.TOOLS) rebuildTools()
+            }
+        }
+        toggleRow.addView(toggle, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        root.addView(toggleRow)
+
+        // ===== SINGLE / MULTI TOGGLE =====
+        val modeRow = LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+            setPadding(0, dp(12), 0, 0)
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        modeRow.addView(TextView(context).apply {
+            text = "Click Mode"
+            setTextColor(theme.keyText)
+            textSize = 16f
+        }, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+
+        val modeBtn = bigBtn(if (multiClick) "Multi" else "Single", if (multiClick) theme.accent else theme.keyBg) {
+            val newMulti = !prefs.getBoolean(SettingsStore.KEY_POINTER_MULTI_CLICK, false)
+            prefs.edit().putBoolean(SettingsStore.KEY_POINTER_MULTI_CLICK, newMulti).apply()
+            rebuildPointer()
+        }
+        modeRow.addView(modeBtn, LayoutParams(dp(80), dp(38)))
+        root.addView(modeRow)
+
+        // ===== CLICK DELAY =====
+        val delaySection = LinearLayout(context).apply {
+            orientation = VERTICAL
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+            setPadding(0, dp(16), 0, 0)
+        }
+        delaySection.addView(TextView(context).apply {
+            text = "Click Delay"
+            setTextColor(theme.keyText)
+            textSize = 14f
+            setTypeface(null, Typeface.BOLD)
+        })
+        delaySection.addView(TextView(context).apply {
+            text = "Wait before clicking (seconds)"
+            setTextColor(theme.keyText.copy(alpha = 0.6f))
+            textSize = 11f
+            setPadding(0, dp(2), 0, 0)
+        })
+
+        val delayRow = LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, dp(50)).apply { topMargin = dp(10) }
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        val delaySec = clickDelayMs / 1000
+        val minusDelay = bigBtn("−", theme.keyBg) {
+            val v = (prefs.getInt(SettingsStore.KEY_POINTER_CLICK_DELAY_MS, 0) - 1000).coerceAtLeast(0)
+            prefs.edit().putInt(SettingsStore.KEY_POINTER_CLICK_DELAY_MS, v).apply(); rebuildPointer()
+        }
+        val delayLabel = TextView(context).apply {
+            text = "${delaySec}s"
+            setTextColor(theme.accent)
+            textSize = 28f
+            setTypeface(null, Typeface.BOLD)
+            gravity = Gravity.CENTER
+            layoutParams = LayoutParams(0, LayoutParams.MATCH_PARENT, 1.2f)
+        }
+        val plusDelay = bigBtn("+", theme.keyBg) {
+            val v = (prefs.getInt(SettingsStore.KEY_POINTER_CLICK_DELAY_MS, 0) + 1000).coerceAtMost(400000)
+            prefs.edit().putInt(SettingsStore.KEY_POINTER_CLICK_DELAY_MS, v).apply(); rebuildPointer()
+        }
+
+        delayRow.addView(minusDelay,
+            LayoutParams(0, LayoutParams.MATCH_PARENT, 0.7f).apply { setMargins(0, 0, dp(4), 0) })
+        delayRow.addView(delayLabel)
+        delayRow.addView(plusDelay,
+            LayoutParams(0, LayoutParams.MATCH_PARENT, 0.7f).apply { setMargins(dp(4), 0, 0, 0) })
+        delaySection.addView(delayRow)
+        root.addView(delaySection)
 
         // ===== BACK ROW =====
         root.addView(pillBtn("⌨ Back to keyboard") { showKeysPanel() },
