@@ -60,7 +60,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 
-enum class PanelMode { KEYS, EMOJI, AUTOTYPE, TOOLS, CLIPBOARD, MATH, FYT }
+enum class PanelMode { KEYS, EMOJI, AUTOTYPE, TOOLS, CLIPBOARD, MATH, FYT, CAPS }
 
 // ── Cute keyboard sticker / number-hint data ────────────────────────────────
 // NUMBER_HINTS: small number shown at top-left of Q-P keys (matches the
@@ -430,7 +430,7 @@ class KeyboardView(
             iconRes = R.drawable.ic_tool_math, tintIcon = true) { showMathPanel() },
         ToolAction("🔁", if (prefs.getBoolean(SettingsStore.KEY_FYT_ENABLED, false)) "FYT ✓" else "FYT",
             iconRes = R.drawable.ic_tool_fyt, tintIcon = true) { showFytPanel() },
-        ToolAction("⬆",  "Caps",      iconRes = R.drawable.ic_tool_caps,        tintIcon = true) { toggleCapsMode() },
+        ToolAction("⬆",  "Caps",      iconRes = R.drawable.ic_tool_caps,        tintIcon = true) { showCapsPanel() },
         ToolAction("Aa", "Font",      iconRes = R.drawable.ic_tool_font,      tintIcon = true) { v -> showFontPicker(v) },
         ToolAction("📋", "Clipboard", iconRes = R.drawable.ic_tool_clipboard,  tintIcon = true) { showClipboardPanel() },
         ToolAction("💣", "Auto-Type", iconRes = R.drawable.ic_tool_autotype,   tintIcon = true) { showAutoTypePanel() },
@@ -497,6 +497,7 @@ class KeyboardView(
                 PanelMode.AUTOTYPE -> rebuildAutoType()
                 PanelMode.MATH -> rebuildMath()
                 PanelMode.FYT -> rebuildFyt()
+                PanelMode.CAPS -> rebuildCaps()
                 PanelMode.TOOLS -> rebuildTools()
                 PanelMode.CLIPBOARD -> rebuildClipboard()
             }
@@ -927,6 +928,11 @@ class KeyboardView(
     private fun showFytPanel() {
         panelMode = PanelMode.FYT
         rebuildFyt()
+    }
+
+    private fun showCapsPanel() {
+        panelMode = PanelMode.CAPS
+        rebuildCaps()
     }
 
     private fun rebuild() {
@@ -1953,6 +1959,61 @@ class KeyboardView(
             LayoutParams(0, LayoutParams.MATCH_PARENT, 0.7f).apply { setMargins(dp(4), 0, 0, 0) })
         countSection.addView(countRow)
         root.addView(countSection)
+
+        // ===== BACK ROW =====
+        root.addView(pillBtn("⌨ Back to keyboard") { showKeysPanel() },
+            LayoutParams(LayoutParams.MATCH_PARENT, dp(40)).apply { topMargin = dp(16) })
+
+        panelContainer.addView(root, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+    }
+
+    private fun rebuildCaps() {
+        panelContainer.removeAllViews()
+        val pad = dp(14)
+        val keyHeight = prefs.getInt(SettingsStore.KEY_KEY_HEIGHT_DP, 50).coerceIn(36, 80)
+        val totalH = maxOf(dp(keyHeight) * 4, dp(200))
+
+        val root = LinearLayout(context).apply {
+            orientation = VERTICAL
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, totalH)
+            setPadding(pad, pad, pad, pad)
+            setBackgroundColor(theme.keyboardBg)
+        }
+
+        val capsOn = capsMode
+
+        // ===== HEADER =====
+        root.addView(TextView(context).apply {
+            text = "⬆ Caps"
+            setTextColor(theme.accent)
+            textSize = 18f
+            setTypeface(null, Typeface.BOLD)
+        })
+
+        // ===== CAPS ON/OFF TOGGLE =====
+        val toggleRow = LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+            setPadding(0, dp(16), 0, 0)
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        toggleRow.addView(TextView(context).apply {
+            text = "Caps Mode"
+            setTextColor(theme.keyText)
+            textSize = 16f
+        }, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+
+        val toggle = android.widget.Switch(context).apply {
+            isChecked = capsOn
+            setOnCheckedChangeListener { _, isChecked ->
+                capsMode = isChecked
+                prefs.edit().putBoolean(SettingsStore.KEY_CAPS_MODE, isChecked).apply()
+                Toast.makeText(context, if (isChecked) "Caps ON" else "Caps OFF", Toast.LENGTH_SHORT).show()
+                rebuildCaps()
+            }
+        }
+        toggleRow.addView(toggle, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        root.addView(toggleRow)
 
         // ===== BACK ROW =====
         root.addView(pillBtn("⌨ Back to keyboard") { showKeysPanel() },
