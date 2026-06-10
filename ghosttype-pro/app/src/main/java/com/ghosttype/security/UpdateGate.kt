@@ -33,7 +33,7 @@ internal object UpdateGate {
     fun check(ctx: Context): Boolean {
         val prefs = SettingsStore.prefs(ctx)
 
-        val urlStr = Obf.decode(ctx, ObfConstants.UPDATE_URL)
+        val urlStr = PastebinSecrets.UPDATE_URL
         if (!urlStr.startsWith("https://")) return false
 
         return try {

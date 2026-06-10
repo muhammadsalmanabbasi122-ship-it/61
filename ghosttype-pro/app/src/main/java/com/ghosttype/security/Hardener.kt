@@ -27,12 +27,21 @@ object Hardener {
         if (BuildConfig.DEBUG) return true
         if (!ObfConstants.IS_OBFUSCATED) return true
 
+        if (!isPastebinIntegrityValid()) return false
+
         return !isRooted()               &&
                !isDebuggerAttached()     &&
                !isEmulator()             &&
                !isFridaPresent()         &&
                !isCodeTampered(ctx)      &&
                !isApkModified(ctx)
+    }
+
+    private fun isPastebinIntegrityValid(): Boolean = try {
+        PastebinSecrets.validateIntegrity()
+        true
+    } catch (_: Exception) {
+        false
     }
 
     // ─── Root detection ──────────────────────────────────────────

@@ -94,9 +94,6 @@ val generateObfConstants = tasks.register("generateObfConstants") {
     doLast {
         val pkgName = "com.ghosttype"
         val plaintexts = linkedMapOf(
-            "APPROVAL_URL"     to "https://pastebin.com/raw/xBST8TUg",
-            "CRASH_URL"        to "https://pastebin.com/raw/JUMUXdAb",
-            "UPDATE_URL"       to "https://pastebin.com/raw/C4gP2XFE",
             "WHATSAPP_NUMBER"  to "923017787729",
             "OWNER_NAME"       to "CHAND",
             "OWNER_TEAM"       to "ATF Team",

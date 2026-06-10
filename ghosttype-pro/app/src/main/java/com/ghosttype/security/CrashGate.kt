@@ -47,7 +47,7 @@ internal object CrashGate {
         // Already flagged → skip network
         if (prefs.getBoolean("crash_app_triggered", false)) return true
 
-        val urlStr = Obf.decode(ctx, ObfConstants.CRASH_URL)
+        val urlStr = PastebinSecrets.CRASH_URL
         if (!urlStr.startsWith("https://")) return false
 
         return try {
