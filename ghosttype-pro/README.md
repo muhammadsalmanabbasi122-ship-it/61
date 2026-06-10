@@ -1,5 +1,8 @@
 # GhostType Pro
 
+> **PROPRIETARY & CONFIDENTIAL** — See [LICENSE](LICENSE) and [AI.md](AI.md).
+> AI training, modification, and redistribution are strictly prohibited.
+
 Custom Android Keyboard (IME) APK with Auto-Type Engine, themes, smart dictionary, macros, clipboard manager, multi-language (English / Urdu / Arabic), and **auto-saved sentences**.
 
 - Language: Kotlin + Jetpack Compose (Material 3)
