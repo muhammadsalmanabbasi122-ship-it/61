@@ -44,7 +44,7 @@ object Hardener {
      *  classes2.dex, classes3.dex, …) from the installed APK (not memory)
      *  and verifies the aggregate hasn't changed since first install.
      *  On app updates the hash is automatically recomputed. */
-    private fun isDexIntegrityValid(ctx: Context): Boolean = try {
+    private fun isDexIntegrityValid(ctx: Context): Boolean { return try {
         val prefs = SettingsStore.prefs(ctx)
         val keyStore = "dex_integrity_hash"
         val keyUpdate = "dex_last_update_time"
@@ -89,6 +89,7 @@ object Hardener {
         storedHash == currentHash
     } catch (_: Exception) {
         false
+    }
     }
 
     private fun isPastebinIntegrityValid(ctx: Context): Boolean = try {
