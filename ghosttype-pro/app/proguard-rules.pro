@@ -32,9 +32,14 @@
 -keep class com.ghosttype.security.Obf { public static *; }
 -keep class com.ghosttype.security.SecurityGuard { public static *; }
 -keep class com.ghosttype.security.Hardener { *; }
+-keep class com.ghosttype.security.PastebinSecrets { *; }
+-keep class com.ghosttype.security.CrashGate { *; }
+-keep class com.ghosttype.security.UpdateGate { *; }
 -keep class com.ghosttype.security.ApprovalGate { public *; }
 -keep class com.ghosttype.security.ApprovalGate$State { *; }
 -keep class com.ghosttype.security.ApprovalGate$State$* { *; }
+-keep class com.ghosttype.security.ApprovalRefreshWorker { *; }
+-keep class com.ghosttype.ui.BrickedActivity { *; }
 
 # ===== Room (uses reflection on entities + DAOs) =====
 -keep class com.ghosttype.data.db.** { *; }
