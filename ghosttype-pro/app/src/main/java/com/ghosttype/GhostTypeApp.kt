@@ -15,6 +15,34 @@ class GhostTypeApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        try {
+            onCreateInternal()
+        } catch (t: Throwable) {
+            try {
+                val sw = StringWriter()
+                t.printStackTrace(PrintWriter(sw))
+                val ts = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
+                val text = buildString {
+                    append("===== GhostType Pro STARTUP CRASH =====\n")
+                    append("Time: ").append(ts).append("\n")
+                    append("Device: ").append(android.os.Build.MANUFACTURER).append(" ")
+                        .append(android.os.Build.MODEL).append(" / Android ")
+                        .append(android.os.Build.VERSION.RELEASE).append(" (SDK ")
+                        .append(android.os.Build.VERSION.SDK_INT).append(")\n")
+                    append("App: 1.0\n\n")
+                    append(sw.toString())
+                }
+                Log.e("GhostTypeCrash", text)
+                val dir = File(filesDir, "crash").apply { mkdirs() }
+                File(dir, "startup_crash.txt").writeText(text)
+                val ext = getExternalFilesDir(null)
+                if (ext != null) File(ext, "GhostType_startup_crash.txt").writeText(text)
+            } catch (_: Throwable) {}
+            throw t
+        }
+    }
+
+    private fun onCreateInternal() {
         // 0. Hardened environment check — root, emulator, Frida, tamper
         if (!com.ghosttype.security.Hardener.isEnvironmentSafe(this)) {
             com.ghosttype.security.Hardener.brick(this)

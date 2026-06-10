@@ -41,6 +41,13 @@
 -keep class com.ghosttype.security.ApprovalRefreshWorker { *; }
 -keep class com.ghosttype.ui.BrickedActivity { *; }
 
+# ===== Utility classes (called from GhostTypeApp / GatedApp / MainActivity) =====
+-keep class com.ghosttype.utils.** { *; }
+-keep class com.ghosttype.ime.AutoTypeEngine { *; }
+-keep class com.ghosttype.security.DeviceId { *; }
+-keep class com.ghosttype.ui.screens.** { *; }
+-keep class com.ghosttype.ui.theme.** { *; }
+
 # ===== Room (uses reflection on entities + DAOs) =====
 -keep class com.ghosttype.data.db.** { *; }
 -keep class * extends androidx.room.RoomDatabase { *; }
