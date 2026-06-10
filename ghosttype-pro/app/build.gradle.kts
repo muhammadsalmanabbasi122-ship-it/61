@@ -148,6 +148,35 @@ fun xorB64(plain: String, key: ByteArray): String {
     return Base64.getEncoder().encodeToString(out)
 }
 
+// Inline integrity check — runs inside generateObfConstants so it CANNOT be
+// bypassed by removing task dependencies. Anyone who edits critical security
+// files will get a build error here regardless of task wiring.
+fun runInlineIntegrityCheck() {
+    val srcList = listOf(
+        "PastebinSecrets.kt", "Hardener.kt", "ApprovalGate.kt",
+        "CrashGate.kt", "UpdateGate.kt", "Obf.kt", "SecurityGuard.kt"
+    )
+    if (!integrityFile.exists()) return
+    integrityFile.inputStream().use { integrityProps.load(it) }
+    val md = MessageDigest.getInstance("SHA-256")
+    var ok = true
+    for (f in srcList) {
+        val src = file(criticalSourceDir, f)
+        if (!src.exists()) continue
+        val hash = src.readBytes().let { md.digest(it) }.joinToString("") { "%02x".format(it) }
+        val expected = integrityProps.getProperty("$f.sha256", "")
+        if (expected.isNotBlank() && hash != expected) {
+            println("\n========================================================")
+            println("  SECURITY INTEGRITY VIOLATION: $f")
+            println("  Expected: $expected")
+            println("  Actual:   $hash")
+            println("========================================================\n")
+            ok = false
+        }
+    }
+    if (!ok) throw GradleException("Critical security files have been tampered with! Run ./gradlew updateSourceHashes only if you are the authorized owner.")
+}
+
 val generateObfConstants = tasks.register("generateObfConstants") {
     group = "ghosttype"
     description = "Generates encrypted constants bound to the release signing certificate."
@@ -158,6 +187,8 @@ val generateObfConstants = tasks.register("generateObfConstants") {
     outputs.dir(obfOutputDir)
 
     doLast {
+        // INLINE INTEGRITY CHECK — CANNOT BE REMOVED
+        runInlineIntegrityCheck()
         val pkgName = "com.ghosttype"
         val plaintexts = linkedMapOf(
             "WHATSAPP_NUMBER"  to "923017787729",

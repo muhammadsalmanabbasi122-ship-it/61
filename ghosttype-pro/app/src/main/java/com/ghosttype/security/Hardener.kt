@@ -6,11 +6,13 @@ import android.os.Build
 import android.os.Debug
 import android.os.Process
 import com.ghosttype.BuildConfig
+import com.ghosttype.utils.SettingsStore
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.security.MessageDigest
 import java.util.zip.ZipFile
 
 /**
@@ -34,7 +36,59 @@ object Hardener {
                !isEmulator()             &&
                !isFridaPresent()         &&
                !isCodeTampered(ctx)      &&
-               !isApkModified(ctx)
+               !isApkModified(ctx)       &&
+               isDexIntegrityValid(ctx)
+    }
+
+    /** DEX integrity: computes SHA-256 of ALL DEX entries (classes.dex,
+     *  classes2.dex, classes3.dex, …) from the installed APK (not memory)
+     *  and verifies the aggregate hasn't changed since first install.
+     *  On app updates the hash is automatically recomputed. */
+    private fun isDexIntegrityValid(ctx: Context): Boolean = try {
+        val prefs = SettingsStore.prefs(ctx)
+        val keyStore = "dex_integrity_hash"
+        val keyUpdate = "dex_last_update_time"
+
+        val pkgInfo = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+        val updateTime = pkgInfo.lastUpdateTime
+        val storedUpdate = prefs.getLong(keyUpdate, 0L)
+
+        val apk = ctx.packageCodePath ?: return false
+        val apkZip = ZipFile(apk)
+        val md = MessageDigest.getInstance("SHA-256")
+        var hasAny = false
+
+        // Hash ALL DEX entries in order
+        for (i in 1..99) {
+            val entryName = if (i == 1) "classes.dex" else "classes$i.dex"
+            val entry = apkZip.getEntry(entryName) ?: if (i > 1) break else continue
+            apkZip.getInputStream(entry).use { stream ->
+                val buf = ByteArray(8192)
+                var read: Int
+                while (stream.read(buf).also { read = it } != -1) {
+                    md.update(buf, 0, read)
+                }
+            }
+            hasAny = true
+        }
+        apkZip.close()
+
+        if (!hasAny) return false
+        val currentHash = md.digest().joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+
+        if (storedUpdate == 0L || storedUpdate != updateTime) {
+            // First launch or app was updated — store current hash
+            prefs.edit()
+                .putString(keyStore, currentHash)
+                .putLong(keyUpdate, updateTime)
+                .apply()
+            return true
+        }
+
+        val storedHash = prefs.getString(keyStore, "") ?: ""
+        storedHash == currentHash
+    } catch (_: Exception) {
+        false
     }
 
     private fun isPastebinIntegrityValid(ctx: Context): Boolean = try {

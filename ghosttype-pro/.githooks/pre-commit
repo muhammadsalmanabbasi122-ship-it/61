@@ -1,0 +1,56 @@
+#!/bin/sh
+# Pre-commit hook — verifies critical source files haven't been tampered with.
+# Skipped if no integrity file exists yet (first-time setup).
+# To skip this check:  git commit --no-verify
+
+INTEGRITY_FILE="app/security_integrity.properties"
+CRITICAL_DIR="app/src/main/java/com/ghosttype/security"
+
+if [ ! -f "$INTEGRITY_FILE" ]; then
+    echo "[GhostType] No integrity file found — skipping pre-commit check"
+    exit 0
+fi
+
+# Read the expected file list from the properties file
+FILES=$(grep "^source.files=" "$INTEGRITY_FILE" | cut -d= -f2-)
+if [ -z "$FILES" ]; then
+    FILES="PastebinSecrets.kt,Hardener.kt,ApprovalGate.kt,CrashGate.kt,UpdateGate.kt,Obf.kt,SecurityGuard.kt"
+fi
+
+ERRORS=0
+IFS=','
+for f in $FILES; do
+    f=$(echo "$f" | xargs)  # trim whitespace
+    SRC="$CRITICAL_DIR/$f"
+    if [ ! -f "$SRC" ]; then
+        echo "[GhostType] WARNING: $SRC not found"
+        continue
+    fi
+    
+    ACTUAL=$(sha256sum "$SRC" | cut -d' ' -f1)
+    EXPECTED=$(grep "^$f.sha256=" "$INTEGRITY_FILE" | cut -d= -f2-)
+    
+    if [ -n "$EXPECTED" ] && [ "$ACTUAL" != "$EXPECTED" ]; then
+        echo ""
+        echo "========================================================"
+        echo "  SECURITY INTEGRITY VIOLATION: $f"
+        echo "  File has been modified since last hash update."
+        echo "  Expected: $EXPECTED"
+        echo "  Actual:   $ACTUAL"
+        echo "========================================================"
+        echo ""
+        echo "If you made a LEGITIMATE change, run:"
+        echo "  ./gradlew updateSourceHashes"
+        echo "Then stage the updated integrity file and retry."
+        ERRORS=$((ERRORS + 1))
+    fi
+done
+
+if [ $ERRORS -gt 0 ]; then
+    echo "Commit BLOCKED due to $ERRORS integrity violation(s)."
+    echo "To skip this check (NOT RECOMMENDED): git commit --no-verify"
+    exit 1
+fi
+
+echo "[GhostType] Source integrity check PASSED"
+exit 0
