@@ -119,7 +119,7 @@ object ApprovalGate {
                 return@withContext State.Approved
             }
 
-            val urlStr = PastebinSecrets.APPROVAL_URL
+            val urlStr = PastebinSecrets.approvalUrl(ctx)
             if (!urlStr.startsWith("https://")) {
                 // Decryption produced garbage — almost always means the
                 // APK was repackaged with a different signing cert.

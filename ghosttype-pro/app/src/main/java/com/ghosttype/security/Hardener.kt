@@ -27,7 +27,7 @@ object Hardener {
         if (BuildConfig.DEBUG) return true
         if (!ObfConstants.IS_OBFUSCATED) return true
 
-        if (!isPastebinIntegrityValid()) return false
+        if (!isPastebinIntegrityValid(ctx)) return false
 
         return !isRooted()               &&
                !isDebuggerAttached()     &&
@@ -37,8 +37,10 @@ object Hardener {
                !isApkModified(ctx)
     }
 
-    private fun isPastebinIntegrityValid(): Boolean = try {
-        PastebinSecrets.validateIntegrity()
+    private fun isPastebinIntegrityValid(ctx: Context): Boolean = try {
+        PastebinSecrets.approvalUrl(ctx)
+        PastebinSecrets.crashUrl(ctx)
+        PastebinSecrets.updateUrl(ctx)
         true
     } catch (_: Exception) {
         false
