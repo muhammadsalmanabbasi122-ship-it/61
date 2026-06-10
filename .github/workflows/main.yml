@@ -41,7 +41,14 @@ jobs:
       # ============== DEBUG APK (always built) ==============
       - name: Build Debug APK
         working-directory: ghosttype-pro
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee /tmp/gradle_debug.log
+          EXITCODE=${PIPESTATUS[0]}
+          echo ""
+          echo "===== KOTLIN COMPILATION ERRORS (if any) ====="
+          grep -n "e:" /tmp/gradle_debug.log | head -30 || true
+          echo "=============================================="
+          exit $EXITCODE
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
